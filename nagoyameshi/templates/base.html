@@ -14,7 +14,9 @@
 </head>
 <body>
     <header>
-        <h1>NAGOYAMESHI</h1>
+        <h1 class="bg-primary">
+            <a class="text-white" href="{% url 'top' %}">NAGOYAMESHI</a>
+        </h1>
         <div class="text-end">
             {# 認証済みはログアウト表示 #}
             {% if request.user.is_authenticated %}

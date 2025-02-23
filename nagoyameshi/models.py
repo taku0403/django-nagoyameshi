@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
+from django.urls import reverse
+
 # 会員
 User = get_user_model()
 
@@ -53,6 +55,9 @@ class Review(models.Model):
         
     def __str__(self):
         return self.content
+    
+    def get_absolute_url(self):
+        return reverse('list')
     
 # お気に入り
 class Favorite(models.Model):
