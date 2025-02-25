@@ -57,7 +57,7 @@ class Review(models.Model):
         return self.content
     
     def get_absolute_url(self):
-        return reverse('list')
+        return reverse('top')
     
 # お気に入り
 class Favorite(models.Model):

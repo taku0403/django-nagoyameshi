@@ -30,7 +30,7 @@ urlpatterns = [
     path("", views.TopView.as_view(), name="top" ),
     path("list/", views.RestaurantListView.as_view(), name="list"),
     path("detail/<int:pk>/", views.RestaurantDetailView.as_view(), name="detail"),
-    path("review/", views.ReviewCreateView.as_view(), name="review")
+    path("detail/new/", views.ReviewCreateView.as_view(), name="new")
 ]
 
 #画像関連

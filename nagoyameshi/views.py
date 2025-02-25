@@ -28,5 +28,7 @@ class RestaurantDetailView(DetailView):
         return context
     
 class ReviewCreateView(CreateView):
-    model = Restaurant
+    model = Review
     fields = '__all__'
+
+    template_name = "restaurant_detail.html"

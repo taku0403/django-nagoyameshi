@@ -41,7 +41,7 @@
 
 <h3>レビューフォーム</h3>
 
-<form action="/admin/nagoyameshi/review/" method="post">
+<form action="% url 'new' %" method="post">
     {% csrf_token %}
     <input type="hidden" name="restaurant" value="{{ restaurant.id }}">
     <input type="hidden" name="user" value="{{ request.user.id }}">
