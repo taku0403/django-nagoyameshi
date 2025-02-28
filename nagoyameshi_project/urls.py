@@ -28,9 +28,13 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
 
     path("", views.TopView.as_view(), name="top" ),
-    path("list/", views.RestaurantListView.as_view(), name="list"),
     path("detail/<int:pk>/", views.RestaurantDetailView.as_view(), name="detail"),
-    path("detail/new/", views.ReviewCreateView.as_view(), name="new")
+    path("detail/new/", views.ReviewCreateView.as_view(), name="new"),
+    path("detail/favorite/", views.FavoriteCreateView.as_view(), name="favorite"),
+    path("detail/reservation", views.ReservationCreateView.as_view(), name="reservation"),
+    path("mypage/", views.MypageView.as_view(), name="mypage"),
+    path("mypage/favorite/", views.FavoriteListView.as_view(), name="favorite_list"),
+    path("mypage/reservation/", views.ReservationListView.as_view(), name="reservation_list"),
 ]
 
 #画像関連
