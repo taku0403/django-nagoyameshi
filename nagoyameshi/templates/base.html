@@ -20,7 +20,8 @@
         <div class="text-end">
             {# 認証済みはログアウト表示 #}
             {% if request.user.is_authenticated %}
-            こんにちは{{ request.user }}さん
+            こんにちは{{ request.user }}さん<br>
+            <a href="{% url 'mypage' %}">マイページ</a>
             {% else %}
             <a class="btn btn-success" href="{% url 'account_login' %}">ログイン</a>
             <a class="btn btn-primary" href="{% url 'account_signup' %}">アカウント新規作成</a>
