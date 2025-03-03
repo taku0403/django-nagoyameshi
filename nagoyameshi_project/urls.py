@@ -35,6 +35,10 @@ urlpatterns = [
     path("mypage/", views.MypageView.as_view(), name="mypage"),
     path("mypage/favorite/", views.FavoriteListView.as_view(), name="favorite_list"),
     path("mypage/reservation/", views.ReservationListView.as_view(), name="reservation_list"),
+
+    path("checkout/", views.CheckoutView.as_view(), name="checkout"),
+    path("success/", views.SuccessView.as_view(), name="success"),
+    path("portal/", views.PortalView.as_view(), name="portal"),
 ]
 
 #画像関連

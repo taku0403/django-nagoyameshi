@@ -9,4 +9,15 @@
 <a href="{% url 'reservation_list' %}"><div>予約一覧</div></a>
 <a href="{% url 'account_logout' %}">ログアウト</a>
 
+<h2>有料会員登録</h2>
+
+{% if is_premium %}
+<a href="{% url 'portal' %}">サブスクリプションの設定をする</a>
+{% else %}
+<form action="{% url 'checkout' %}" method="post">
+    {% csrf_token %}
+    <input type="submit" value="有料会員登録をする">
+</form>
+{% endif %}
+
 {% endblock %}

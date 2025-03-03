@@ -182,3 +182,16 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #画像関連
 MEDIA_URL = '/media/'
 MADIA_ROOT = BASE_DIR / 'media_lacal'
+
+# APIキーをGitHubに公開してしまうと、不正に利用される可能性があるので、ローカルで動かすときだけ記入。
+STRIPE_API_KEY          = "sk_test_51QxU10HqivSitlXnpD9RWKdT4p2NwVuTkw5yuKtguzzgB41tMOIicusk2jbc2GY9WVJqcTu6sH7rlIQXNBZ7IbmL00F1rFp61u"
+STRIPE_PUBLISHABLE_KEY  = "pk_test_51QxU10HqivSitlXnDBM0KQjEAHbYM2o6v8ye5nEed7IQlV1JuYbZfWaxoVlV1zYx1c0lTWeCr3V9lW5ktYtS7VQ600GA6x2Z1v"
+STRIPE_PRICE_ID         = "price_1QxfifHqivSitlXnotysE3C2"
+# もし、GitHubに公開する時、削除をするのが面倒な場合は、環境変数を用意する。
+
+# Stripeの設定
+import os
+if "STRIPE_PUBLISHABLE_KEY" in os.environ and "STRIPE_API_KEY" in os.environ and "STRIPE_PRICE_ID" in os.environ:
+    STRIPE_PUBLISHABLE_KEY  = os.environ["STRIPE_PUBLISHABLE_KEY"]
+    STRIPE_API_KEY          = os.environ["STRIPE_API_KEY"]
+    STRIPE_PRICE_ID         = os.environ["STRIPE_PRICE_ID"]
