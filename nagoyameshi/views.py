@@ -5,12 +5,39 @@ from django.shortcuts import render, redirect
 from django.views.generic import TemplateView, DetailView, ListView 
 from .models import Restaurant, Review, Favorite, Reservation, PremiumUser
 
+# スペース区切りの検索に対応するためのクエリビルダ
+from django.db.models import Q
+
 class TopView(TemplateView):
     template_name = "nagoyameshi/top.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['restaurants'] = Restaurant.objects.all()
+
+        query = Q()
+
+        print(self.request.GET)
+        # 検索フォームに入力されたキーワード取得
+        # 事前にキーワードがあるかチェック
+        if "search" in self.request.GET:
+            # context['restaurants'] = Restaurant.objects.filter(name=self.request.GET["search"])←完全一致の場合
+
+            # 指定したキーワードを含む検索にする。 __icontains : 指定したキーワードを含む( 英字の場合大文字と小文字の区別はしない)
+            #  __icontains : 指定したキーワードを含む( 英字の場合大文字と小文字の区別はしない)、__contains : 指定したキーワードを含む( 英字の場合大文字と小文字の区別はする)
+            #context['restaurants'] = Restaurant.objects.filter(name__icontains=self.request.GET["search"])
+
+            # スペース区切りの検索に対応させるにはクエリビルダを使う。
+            # スペース区切りの文字列を、文字列のリスト型に変換する。(全角スペースの場合もある) 
+            words = self.request.GET["search"].replace("　"," ").split(" ")
+
+            for word in words:
+                query &= Q(name__icontains=word)
+            
+            # query の wordsのキーワードがすべて条件に含まれる状態
+            context['restaurants'] = Restaurant.objects.filter(query)
+        else: 
+            context['restaurants'] = Restaurant.objects.all()
+
         return context
 
 class RestaurantDetailView(DetailView):
@@ -33,6 +60,42 @@ from .forms import ReviewForm, FavoriteForm, ReservationForm
 
 class ReviewCreateView(View):
     def post(self, request, *args, **kwargs):
+
+        #========有料会員であるかのチェック=======================
+
+        premium_user = PremiumUser.objects.filter(user=request.user).first()
+
+        if not premium_user:
+            print("有料会員ではありません。")
+            return redirect("mypage")
+
+
+        # カスタマーIDを元にStripeに問い合わせ
+        try:
+            subscriptions = stripe.Subscription.list(customer=premium_user.premium_code)
+        except:
+            print("このカスタマーIDは無効です。")
+            premium_user.delete()
+
+            return redirect("mypage")
+        
+        is_premium = False
+
+        # ステータスがアクティブであるかチェック。
+        for subscription in subscriptions.auto_paging_iter():
+            if subscription.status == "active":
+                print("サブスクリプションは有効です。")
+                is_premium = True
+            else:
+                print("サブスクリプションが無効です。")
+            
+        if not is_premium:
+            premium_user.delete()
+            return redirect("mypage")
+        
+        #========有料会員であるかのチェック=======================
+
+
         # POSTメソッド受け取り処理
         form = ReviewForm(request.POST)
 
@@ -46,6 +109,41 @@ class ReviewCreateView(View):
     
 class FavoriteCreateView(View):
     def post(self, request, *args, **kwargs):
+
+        #========有料会員であるかのチェック=======================
+
+        premium_user = PremiumUser.objects.filter(user=request.user).first()
+
+        if not premium_user:
+            print("有料会員ではありません。")
+            return redirect("mypage")
+
+
+        # カスタマーIDを元にStripeに問い合わせ
+        try:
+            subscriptions = stripe.Subscription.list(customer=premium_user.premium_code)
+        except:
+            print("このカスタマーIDは無効です。")
+            premium_user.delete()
+
+            return redirect("mypage")
+        
+        is_premium = False
+
+        # ステータスがアクティブであるかチェック。
+        for subscription in subscriptions.auto_paging_iter():
+            if subscription.status == "active":
+                print("サブスクリプションは有効です。")
+                is_premium = True
+            else:
+                print("サブスクリプションが無効です。")
+            
+        if not is_premium:
+            premium_user.delete()
+            return redirect("mypage")
+        
+        #========有料会員であるかのチェック=======================
+
         #すでに登録済みの場合、削除
         favorites = Favorite.objects.filter(user=request.user, restaurant=request.POST["restaurant"])
         if favorites:
@@ -62,6 +160,41 @@ class FavoriteCreateView(View):
     
 class ReservationCreateView(View):
     def post(self, request, *args, **kwargs):
+
+        #========有料会員であるかのチェック=======================
+
+        premium_user = PremiumUser.objects.filter(user=request.user).first()
+
+        if not premium_user:
+            print("有料会員ではありません。")
+            return redirect("mypage")
+
+
+        # カスタマーIDを元にStripeに問い合わせ
+        try:
+            subscriptions = stripe.Subscription.list(customer=premium_user.premium_code)
+        except:
+            print("このカスタマーIDは無効です。")
+            premium_user.delete()
+
+            return redirect("mypage")
+        
+        is_premium = False
+
+        # ステータスがアクティブであるかチェック。
+        for subscription in subscriptions.auto_paging_iter():
+            if subscription.status == "active":
+                print("サブスクリプションは有効です。")
+                is_premium = True
+            else:
+                print("サブスクリプションが無効です。")
+            
+        if not is_premium:
+            premium_user.delete()
+            return redirect("mypage")
+        
+        #========有料会員であるかのチェック=======================
+
         form = ReservationForm(request.POST)
         if form.is_valid():
             form.save()
@@ -195,38 +328,40 @@ class PortalView(LoginRequiredMixin,View):
 
         return redirect(portalSession.url)
 
-"""
 class PremiumView(View):
     def get(self, request, *args, **kwargs):
         
-        if not request.user.customer:
-            print("カスタマーIDがセットされていません。")
-            return redirect("bbs:index")
+        premium_user = PremiumUser.objects.filter(user=request.user).first()
+
+        if not premium_user:
+            print("有料会員ではありません。")
+            return redirect("mypage")
 
 
         # カスタマーIDを元にStripeに問い合わせ
         try:
-            subscriptions = stripe.Subscription.list(customer=request.user.customer)
+            subscriptions = stripe.Subscription.list(customer=premium_user.premium_code)
         except:
             print("このカスタマーIDは無効です。")
+            premium_user.delete()
 
-            request.user.customer   = ""
-            request.user.save()
-
-            return redirect("bbs:index")
-
+            return redirect("mypage")
+        
+        is_premium = False
 
         # ステータスがアクティブであるかチェック。
         for subscription in subscriptions.auto_paging_iter():
             if subscription.status == "active":
                 print("サブスクリプションは有効です。")
-
-                return render(request, "bbs/premium.html")
+                is_premium = True
             else:
                 print("サブスクリプションが無効です。")
-
-
-        return redirect("bbs:index")
+            
+        if not is_premium:
+            premium_user.delete()
+            return redirect("mypage")
+        
+        # 有料会員向けの処理を実行する。
+        return redirect("")
 
 premium     = PremiumView.as_view()
-"""

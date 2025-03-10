@@ -2,6 +2,14 @@
 
 {% block title %}トップ画面{% endblock %}
 {% block content %}
+
+{# 検索用のフォームを用意する #}
+<form action="" method="get">
+    {# csrf_token はpostの時だけ必要 #}
+    <input class="" type="text" placeholder="キーワードを入力してください" name="search" value="{{ request.GET.search }}">
+    <input type="submit" value="検索">
+</form>
+
 <div class="row">
     {% for restaurant in restaurants %}
     <div class="col-4 border p-2">
