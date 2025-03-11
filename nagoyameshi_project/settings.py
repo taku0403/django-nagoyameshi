@@ -25,6 +25,9 @@ SECRET_KEY = 'django-insecure-6*b3k--_lqr1^-uxrtz9teujx_mo1kw1m0dkyc)6mikofr708w
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+# Trueのままではデプロイできない。
+DEBUG = False
+
 ALLOWED_HOSTS = []
 
 #################django-allauthでのメール認証設定ここから###################
@@ -189,11 +192,73 @@ STRIPE_PUBLISHABLE_KEY  = "pk_test_51QxU10HqivSitlXnDBM0KQjEAHbYM2o6v8ye5nEed7IQ
 STRIPE_PRICE_ID         = "price_1QxfifHqivSitlXnotysE3C2"
 # もし、GitHubに公開する時、削除をするのが面倒な場合は、環境変数を用意する。
 
-"""
 # Stripeの設定
 import os
 if "STRIPE_PUBLISHABLE_KEY" in os.environ and "STRIPE_API_KEY" in os.environ and "STRIPE_PRICE_ID" in os.environ:
     STRIPE_PUBLISHABLE_KEY  = os.environ["STRIPE_PUBLISHABLE_KEY"]
     STRIPE_API_KEY          = os.environ["STRIPE_API_KEY"]
     STRIPE_PRICE_ID         = os.environ["STRIPE_PRICE_ID"]
-"""
+
+if not DEBUG:
+    
+    # INSTALLED_APPSにcloudinaryの追加
+    INSTALLED_APPS.append('cloudinary')
+    INSTALLED_APPS.append('cloudinary_storage')
+
+    # ALLOWED_HOSTSに(Djangoの公開を許可するホスト名(ドメイン名))を入力
+    # 環境変数からホスト名を読み込みするようにする。
+    ALLOWED_HOSTS = [ os.environ["HOST"] ]
+
+    # パスワードのハッシュ化、CSRFトークンの生成に使われる。
+    SECRET_KEY = os.environ["SECRETKEY"]
+
+    # 静的ファイル配信ミドルウェア、whitenoiseを使用。※ 順番不一致だと動かないため下記をそのままコピーする。
+    MIDDLEWARE = [ 
+        'django.middleware.security.SecurityMiddleware',
+        'whitenoise.middleware.WhiteNoiseMiddleware',
+        'django.contrib.sessions.middleware.SessionMiddleware',
+        'django.middleware.common.CommonMiddleware',
+        'django.middleware.csrf.CsrfViewMiddleware',
+        'django.contrib.auth.middleware.AuthenticationMiddleware',
+        'django.contrib.messages.middleware.MessageMiddleware',
+        'django.middleware.clickjacking.XFrameOptionsMiddleware',
+        "allauth.account.middleware.AccountMiddleware",
+        ]
+    
+    # 静的ファイル(static)の存在場所を指定する。
+    STATIC_ROOT = BASE_DIR / 'static'
+
+    # DBの設定 HerokuPostgres
+    DATABASES = { 
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql_psycopg2',
+                'NAME'    : os.environ["DB_NAME"],
+                'USER'    : os.environ["DB_USER"],
+                'PASSWORD': os.environ["DB_PASSWORD"],
+                'HOST'    : os.environ["DB_HOST"],
+                'PORT': '5432',
+                }
+            }
+
+    #DBのアクセス設定
+    import dj_database_url
+
+    db_from_env = dj_database_url.config(conn_max_age=600, ssl_require=True)
+    DATABASES['default'].update(db_from_env)
+
+    #cloudinaryの設定
+    CLOUDINARY_STORAGE = { 
+            'CLOUD_NAME': os.environ["CLOUD_NAME"], 
+            'API_KEY'   : os.environ["API_KEY"], 
+            'API_SECRET': os.environ["API_SECRET"],
+            "SECURE"    : True,
+            }
+
+    #画像だけ(上限20MB)
+    #DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+    #動画だけ(上限100MB)
+    #DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.VideoMediaCloudinaryStorage'
+
+    #全てのファイルがアップロード可能(上限20MB。ビュー側でアップロードファイル制限するなら基本これで良い)
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.RawMediaCloudinaryStorage'
