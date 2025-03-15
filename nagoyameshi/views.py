@@ -2,11 +2,13 @@ from django.shortcuts import render, redirect
 
 # Create your views here.
 
-from django.views.generic import TemplateView, DetailView, ListView 
+from django.views.generic import TemplateView, DetailView, ListView, UpdateView
 from .models import Restaurant, Review, Favorite, Reservation, PremiumUser
 
 # スペース区切りの検索に対応するためのクエリビルダ
 from django.db.models import Q
+
+from django.utils import timezone
 
 class TopView(TemplateView):
     template_name = "nagoyameshi/top.html"
@@ -106,7 +108,12 @@ class ReviewCreateView(View):
             print(form.errors)
         
         return redirect("detail", request.POST["restaurant"])
-    
+
+class ReviewUpdateView(UpdateView):
+    model = Review
+    fields = '__all__'
+    template_name_suffix = '_update_form' 
+
 class FavoriteCreateView(View):
     def post(self, request, *args, **kwargs):
 
@@ -195,8 +202,29 @@ class ReservationCreateView(View):
         
         #========有料会員であるかのチェック=======================
 
+        # フローチャート実施
+        now = timezone.now()
         form = ReservationForm(request.POST)
         if form.is_valid():
+            # 送られてきた全データが型変換されて辞書型で手に入る。
+            cleaned = form.clean()
+
+            # datetime型でも比較が出来る
+            if now > cleaned["datetime"]:
+                print("予約指定した時刻が現在よりも過去になっています")
+                return redirect("detail", request.POST["restaurant"])
+            
+            if cleaned["restaurant"].start_at < cleaned["restaurant"].end_at:
+                if cleaned["restaurant"].start_at > cleaned["datetime"].time() or cleaned["datetime"].time() > cleaned["restaurant"].end_at:
+                    print("予約指定した時刻が営業時間外です")
+                    return redirect("detail", request.POST["restaurant"])
+            else:
+                if cleaned["restaurant"].end_at < cleaned["datetime"].time() < cleaned["restaurant"].start_at:
+                    print("予約指定した時刻が営業時間外です")
+                    return redirect("detail", request.POST["restaurant"])
+            
+            # TODO:店舗の収容可能人数を記録するフィールドを追加して、指定した人数が収容できるか分岐する。
+
             form.save()
         else:
             print(form.errors)
@@ -216,9 +244,31 @@ class FavoriteListView(ListView):
     model = Favorite
     template_name = "nagoyamehi/favorite_list.html"
 
+    # 他のユーザーの分が反映しないように
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["object_list"] = Favorite.objects.filter(user=self.request.user)
+        return context
+    
+
 class ReservationListView(ListView):
     model = Reservation
     template_name = "nagoyameshi/reservation_list.html"
+
+    # 他のユーザーの分が反映しないように
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["object_list"] = Reservation.objects.filter(user=self.request.user)
+        return context
+    
+class ReservationCancelView(View):
+    def post(self, request, pk, *args, **kwargs):
+        # 予約のキャンセル
+        reservation = Reservation.objects.filter(id=pk, user=request.user)
+
+        # TODO: 必要があればif文で更に絞り込み(例:予約キャンセル不可の時間になった場合はキャンセルしない。)
+        reservation.delete()
+        return redirect("mypage")
 
 # サブスク登録はログイン済みのユーザーだけ
 from django.contrib.auth.mixins import LoginRequiredMixin

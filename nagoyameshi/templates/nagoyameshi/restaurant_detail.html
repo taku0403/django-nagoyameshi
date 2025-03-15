@@ -47,6 +47,10 @@
     <div>編集日時: {{ review.updated_at }}</div>
     <div>投稿者: {{ review.user }}</div>
     <div>コメント: {{ review.content }}</div>
+
+    {% if review.user == request.user %}
+    <a href="{% url 'review_update' review.id %}">編集</a>
+    {% endif %}
 </div>
 {% endfor %}
 
