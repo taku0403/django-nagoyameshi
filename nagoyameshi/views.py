@@ -3,11 +3,12 @@ from django.shortcuts import render, redirect
 # Create your views here.
 
 from django.views.generic import TemplateView, DetailView, ListView, UpdateView
-from .models import Restaurant, Review, Favorite, Reservation, PremiumUser
+from .models import Restaurant, Review, Favorite, Reservation, PremiumUser, Category
 
 # スペース区切りの検索に対応するためのクエリビルダ
-from django.db.models import Q
+from django.db.models import Q, Sum
 
+import datetime
 from django.utils import timezone
 
 class TopView(TemplateView):
@@ -15,6 +16,8 @@ class TopView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        context["categories"] = Category.objects.all() 
 
         query = Q()
 
@@ -35,11 +38,19 @@ class TopView(TemplateView):
             for word in words:
                 query &= Q(name__icontains=word)
             
-            # query の wordsのキーワードがすべて条件に含まれる状態
+        """
+            # query の wordsのキーワードがすべて条件に含まれた状態になる。
             context['restaurants'] = Restaurant.objects.filter(query)
-        else: 
-            context['restaurants'] = Restaurant.objects.all()
+        else:
+            context['restaurants'] = Restaurant.objects.filter(query)
+            # ↑は Restaurant.objects.all()と同じ。
+        """
+        # queryにカテゴリも加える
+        if "category" in self.request.GET:
+            if self.request.GET["category"] != "":
+                query &= Q(category=self.request.GET["category"])
 
+        context['restaurants'] = Restaurant.objects.filter(query)
         return context
 
 class RestaurantDetailView(DetailView):
@@ -223,7 +234,24 @@ class ReservationCreateView(View):
                     print("予約指定した時刻が営業時間外です")
                     return redirect("detail", request.POST["restaurant"])
             
-            # TODO:店舗の収容可能人数を記録するフィールドを追加して、指定した人数が収容できるか分岐する。
+            # 指定した人数が収容できるか分岐する。
+            if cleaned["restaurant"].capacity < cleaned["headcount"]:
+                print("店舗の収容人数を超えています")
+                return redirect("detail", request.POST["restaurant"])
+            
+            # +-30分で同じ店舗に予約されているか調べる
+            reservation_start_time = cleaned["datetime"] - datetime.timedelta(minutes=30)
+            reservation_end_time = cleaned["datetime"] + datetime.timedelta(minutes=30)
+
+            data = Reservation.objects.filter(datetime__gte=reservation_start_time, datetime__lte=reservation_end_time, restaurant=cleaned["restaurant"]).aggregate(Sum("headcount"))
+            print(data)
+            print(data["headcount__sum"])
+
+            if data["headcount__sum"] == None:
+                data["headcount__sum"] = 0
+            if cleaned["restaurant"].capacity < cleaned["headcount"] + data["headcount__sum"]:
+                print("予約できる人数を超過しています")
+                return redirect("detail", request.POST["restaurant"])
 
             form.save()
         else:
