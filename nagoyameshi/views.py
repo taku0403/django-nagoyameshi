@@ -11,6 +11,8 @@ from django.db.models import Q, Sum
 import datetime
 from django.utils import timezone
 
+from .forms import UserForm
+
 class TopView(TemplateView):
     template_name = "nagoyameshi/top.html"
 
@@ -267,6 +269,17 @@ class MypageView(TemplateView):
         context["is_premium"] = PremiumUser.objects.filter(user=self.request.user).exists()
 
         return context
+    
+class MypageUpdateView(View):
+    def post(self, request, *args, **kwargs):
+        # 編集を受け付ける
+        form = UserForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+        else:
+            print(form.error)
+        
+        return redirect("mypage")
 
 class FavoriteListView(ListView):
     model = Favorite

@@ -5,6 +5,13 @@
 <h1>マイページ</h1>
 
 <div>会員登録情報</div>
+<form action="{% url 'mypage_update' %}" method="post">
+    {% csrf_token %}
+    <input type="text" name="first_name" value="{{ request.user.first_name }}">
+    <input type="text" name="last_name" value="{{ request.user.last_name }}">
+    <input type="submit" value="編集する">
+</form>
+<a href="{% url 'mypage_update' %}">ユーザー情報変更</a>
 <a href="{% url 'favorite_list' %}"><div>お気に入り一覧</div></a>
 <a href="{% url 'reservation_list' %}"><div>予約一覧</div></a>
 <a href="{% url 'account_logout' %}">ログアウト</a>
