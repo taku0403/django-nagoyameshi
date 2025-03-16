@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-6*b3k--_lqr1^-uxrtz9teujx_mo1kw1m0dkyc)6mikofr708w
 DEBUG = True
 
 # Trueのままではデプロイできない。
-DEBUG = False
+# DEBUG = False
 
 ALLOWED_HOSTS = []
 
